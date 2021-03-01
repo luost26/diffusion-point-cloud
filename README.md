@@ -1,5 +1,5 @@
 # Diffusion Probabilistic Models for 3D Point Cloud Generation
-<img src="teaser.png" alt="teaser" style="zoom:50%;" />
+![teaser](teaser.png)
 
 [arXiv] [[Code](https://github.com/luost26/diffusion-point-cloud)]
 
