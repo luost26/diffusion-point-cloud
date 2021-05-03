@@ -19,4 +19,4 @@ The official code repository for our CVPR 2021 paper "Diffusion Probabilistic Mo
 
 ## Updates
 
-Mar 1, 2021. Code is coming soon.
+- May 3, 2021. We will release the code in June, when the paper gets published formally in CVPR.
