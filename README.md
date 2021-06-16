@@ -5,6 +5,8 @@
 
 The official code repository for our CVPR 2021 paper "Diffusion Probabilistic Models for 3D Point Cloud Generation".
 
+🚧 **Work in progress. The code is coming soon.**
+
 ## Citation
 
 ```
