@@ -24,7 +24,7 @@ class FlowVAE(Module):
             )
         )
 
-    def get_loss(self, x, writer=None, it=None, kl_weight=1.0):
+    def get_loss(self, x, kl_weight, writer=None, it=None):
         """
         Args:
             x:  Input point clouds, (B, N, d).
