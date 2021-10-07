@@ -7,7 +7,7 @@ The official code repository for our CVPR 2021 paper "Diffusion Probabilistic Mo
 
 ## Installation
 
-**[Option 1]** Install via conda environment YAML file (CUDA 10.1).
+**[Option 1]** Install via conda environment YAML file (**CUDA 10.1**).
 
 ```bash
 # Create the environment
@@ -16,7 +16,7 @@ conda env create -f env.yml
 conda activate dpm-pc-gen
 ```
 
-**[Option 2]** Or you may setup the environment manually (If you are using GPUs that only work with CUDA 11 or greater).
+**[Option 2]** Or you may setup the environment manually (**If you are using GPUs that only work with CUDA 11 or greater**).
 
 Our model only depends on the following commonly used packages, all of which can be installed via conda.
 
