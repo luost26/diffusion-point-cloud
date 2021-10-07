@@ -31,7 +31,6 @@ parser.add_argument('--categories', type=str_list, default=['airplane'])
 parser.add_argument('--scale_mode', type=str, default='shape_unit')
 parser.add_argument('--train_batch_size', type=int, default=128)
 parser.add_argument('--val_batch_size', type=int, default=32)
-parser.add_argument('--num_workers', type=int, default=1)
 parser.add_argument('--rotate', type=eval, default=False, choices=[True, False])
 
 # Optimizer and scheduler
@@ -91,9 +90,9 @@ val_dset = ShapeNetCore(
 train_iter = get_data_iterator(DataLoader(
     train_dset,
     batch_size=args.train_batch_size,
-    num_workers=args.num_workers
+    num_workers=0,
 ))
-val_loader = DataLoader(val_dset, batch_size=args.val_batch_size, num_workers=args.num_workers)
+val_loader = DataLoader(val_dset, batch_size=args.val_batch_size, num_workers=0)
 
 
 # Model
@@ -165,7 +164,7 @@ def validate_loss(it):
 
     all_refs = torch.cat(all_refs, dim=0)
     all_recons = torch.cat(all_recons, dim=0)
-    metrics = EMD_CD(all_recons, all_refs, batch_size=args.val_batch_size, accelerated_cd=True)
+    metrics = EMD_CD(all_recons, all_refs, batch_size=args.val_batch_size)
     cd, emd = metrics['MMD-CD'].item(), metrics['MMD-EMD'].item()
     
     logger.info('[Val] Iter %04d | CD %.6f | EMD %.6f  ' % (it, cd, emd))

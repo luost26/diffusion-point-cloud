@@ -131,4 +131,3 @@ dmypy.json
 .DS_Store
 /playgrounds
 /logs*
-/results*

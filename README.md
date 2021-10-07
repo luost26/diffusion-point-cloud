@@ -7,7 +7,7 @@ The official code repository for our CVPR 2021 paper "Diffusion Probabilistic Mo
 
 ## Installation
 
-**[Step 1]** Setup conda environment
+**[Option 1]** Install via conda environment YAML file (CUDA 10.1).
 
 ```bash
 # Create the environment
@@ -16,20 +16,25 @@ conda env create -f env.yml
 conda activate dpm-pc-gen
 ```
 
-**[Step 2]** Compile the evaluation module
+**[Option 2]** Or you may setup the environment manually (If you are using GPUs that only work with CUDA 11 or greater).
 
-⚠️ Please compile the module using **`nvcc` 10.0**. Errors might occur if you use other versions (for example 10.1). 
+Our model only depends on the following commonly used packages, all of which can be installed via conda.
 
-💡 You might specify your `nvcc` path [here](https://github.com/luost26/diffusion-point-cloud/blob/9be449f80b1353e6d39010363d4e139e9e532a2c/evaluation/pytorch_structural_losses/Makefile#L9).
+| Package      | Version                          |
+| ------------ | -------------------------------- |
+| PyTorch      | ≥ 1.6.0                          |
+| h5py         | *not specified* (we used 4.61.1) |
+| tqdm         | *not specified*                  |
+| tensorboard  | *not specified* (we used 2.5.0)  |
+| numpy        | *not specified* (we used 1.20.2) |
+| scipy        | *not specified* (we used 1.6.2)  |
+| scikit-learn | *not specified* (we used 0.24.2) |
 
-```bash
-# Please ensure the conda environment `dpm-pc-gen` is activated.
-cd ./evaluation/pytorch_structural_losses
-make clean
-make
-# Return to the project directory
-cd ../../
-```
+## About the EMD Metric
+
+We have removed the EMD module due to GPU compatability issues. The legacy code can be found on the `emd-cd` branch.
+
+If you have to compute the EMD score or compare our model with others, we strongly advise you to use your own code to compute the metrics. The generation and decoding results will be saved to the `results` folder after each test run.
 
 ## Datasets and Pretrained Models
 

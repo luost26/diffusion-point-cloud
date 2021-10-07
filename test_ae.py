@@ -20,7 +20,6 @@ parser.add_argument('--device', type=str, default='cuda')
 # Datasets and loaders
 parser.add_argument('--dataset_path', type=str, default='./data/shapenet.hdf5')
 parser.add_argument('--batch_size', type=int, default=128)
-parser.add_argument('--num_workers', type=int, default=4)
 args = parser.parse_args()
 
 # Logging
@@ -43,7 +42,7 @@ test_dset = ShapeNetCore(
     split='test',
     scale_mode=ckpt['args'].scale_mode
 )
-test_loader = DataLoader(test_dset, batch_size=args.batch_size, num_workers=args.num_workers)
+test_loader = DataLoader(test_dset, batch_size=args.batch_size, num_workers=0)
 
 # Model
 logger.info('Loading model...')
@@ -75,7 +74,7 @@ np.save(os.path.join(save_dir, 'ref.npy'), all_ref.numpy())
 np.save(os.path.join(save_dir, 'out.npy'), all_recons.numpy())
 
 logger.info('Start computing metrics...')
-metrics = EMD_CD(all_recons.to(args.device), all_ref.to(args.device), batch_size=args.batch_size, accelerated_cd=True)
+metrics = EMD_CD(all_recons.to(args.device), all_ref.to(args.device), batch_size=args.batch_size)
 cd, emd = metrics['MMD-CD'].item(), metrics['MMD-EMD'].item()
 logger.info('CD:  %.12f' % cd)
 logger.info('EMD: %.12f' % emd)
