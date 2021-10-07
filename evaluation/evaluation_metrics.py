@@ -5,22 +5,19 @@ from scipy.stats import entropy
 from sklearn.neighbors import NearestNeighbors
 from numpy.linalg import norm
 from tqdm.auto import tqdm
-# Import CUDA version of approximate EMD,
-# from https://github.com/zekunhao1995/pcgan-pytorch/
-from evaluation.StructuralLosses.match_cost import match_cost  # noqa
-from evaluation.StructuralLosses.nn_distance import nn_distance  # noqa
 
 
-def distChamferCUDA(x, y):
-    return nn_distance(x, y)
-
-
+_EMD_NOT_IMPL_WARNED = False
 def emd_approx(sample, ref):
-    B, N, N_ref = sample.size(0), sample.size(1), ref.size(1)
-    assert N == N_ref, "Not sure what would EMD do in this case"
-    emd = match_cost(sample, ref)  # (B,)
-    emd_norm = emd / float(N)  # (B,)
-    return emd_norm
+    emd = torch.zeros([sample.size(0)]).to(sample)
+    if not _EMD_NOT_IMPL_WARNED:
+        _EMD_NOT_IMPL_WARNED = True
+        print('\n[WARNING]')
+        print('  * EMD is not implemented due to GPU compatability issue.')
+        print('  * We will set all EMD to zero by default.')
+        print('  * You may implement your own EMD in the function `emd_approx` in ./evaluation/evaluation_metrics.py')
+        print('\n')
+    return emd
 
 
 # Borrow from https://github.com/ThibaultGROUEIX/AtlasNet
@@ -37,7 +34,7 @@ def distChamfer(a, b):
     return P.min(1)[0], P.min(2)[0]
 
 
-def EMD_CD(sample_pcs, ref_pcs, batch_size, accelerated_cd=False, reduced=True):
+def EMD_CD(sample_pcs, ref_pcs, batch_size, reduced=True):
     N_sample = sample_pcs.shape[0]
     N_ref = ref_pcs.shape[0]
     assert N_sample == N_ref, "REF:%d SMP:%d" % (N_ref, N_sample)
@@ -51,10 +48,7 @@ def EMD_CD(sample_pcs, ref_pcs, batch_size, accelerated_cd=False, reduced=True):
         sample_batch = sample_pcs[b_start:b_end]
         ref_batch = ref_pcs[b_start:b_end]
 
-        if accelerated_cd:
-            dl, dr = distChamferCUDA(sample_batch, ref_batch)
-        else:
-            dl, dr = distChamfer(sample_batch, ref_batch)
+        dl, dr = distChamfer(sample_batch, ref_batch)
         cd_lst.append(dl.mean(dim=1) + dr.mean(dim=1))
 
         emd_batch = emd_approx(sample_batch, ref_batch)
@@ -74,8 +68,7 @@ def EMD_CD(sample_pcs, ref_pcs, batch_size, accelerated_cd=False, reduced=True):
     return results
 
 
-def _pairwise_EMD_CD_(sample_pcs, ref_pcs, batch_size,
-                      accelerated_cd=True, verbose=True):
+def _pairwise_EMD_CD_(sample_pcs, ref_pcs, batch_size, verbose=True):
     N_sample = sample_pcs.shape[0]
     N_ref = ref_pcs.shape[0]
     all_cd = []
@@ -101,10 +94,7 @@ def _pairwise_EMD_CD_(sample_pcs, ref_pcs, batch_size,
                 batch_size_ref, -1, -1)
             sample_batch_exp = sample_batch_exp.contiguous()
 
-            if accelerated_cd:
-                dl, dr = distChamferCUDA(sample_batch_exp, ref_batch)
-            else:
-                dl, dr = distChamfer(sample_batch_exp, ref_batch)
+            dl, dr = distChamfer(sample_batch_exp, ref_batch)
             cd_lst.append((dl.mean(dim=1) + dr.mean(dim=1)).view(1, -1))
 
             emd_batch = emd_approx(sample_batch_exp, ref_batch)
@@ -188,12 +178,11 @@ def lgan_mmd_cov_match(all_dist):
     }, min_idx.view(-1)
 
 
-def compute_all_metrics(sample_pcs, ref_pcs, batch_size, accelerated_cd=False):
+def compute_all_metrics(sample_pcs, ref_pcs, batch_size):
     results = {}
 
     print("Pairwise EMD CD")
-    M_rs_cd, M_rs_emd = _pairwise_EMD_CD_(
-        ref_pcs, sample_pcs, batch_size, accelerated_cd=accelerated_cd)
+    M_rs_cd, M_rs_emd = _pairwise_EMD_CD_(ref_pcs, sample_pcs, batch_size)
 
     res_cd = lgan_mmd_cov(M_rs_cd.t())
     results.update({
@@ -208,10 +197,8 @@ def compute_all_metrics(sample_pcs, ref_pcs, batch_size, accelerated_cd=False):
     for k, v in results.items():
         print('[%s] %.8f' % (k, v.item()))
 
-    M_rr_cd, M_rr_emd = _pairwise_EMD_CD_(
-        ref_pcs, ref_pcs, batch_size, accelerated_cd=accelerated_cd)
-    M_ss_cd, M_ss_emd = _pairwise_EMD_CD_(
-        sample_pcs, sample_pcs, batch_size, accelerated_cd=accelerated_cd)
+    M_rr_cd, M_rr_emd = _pairwise_EMD_CD_(ref_pcs, ref_pcs, batch_size)
+    M_ss_cd, M_ss_emd = _pairwise_EMD_CD_(sample_pcs, sample_pcs, batch_size)
 
     # 1-NN results
     one_nn_cd_res = knn(M_rr_cd, M_rs_cd, M_ss_cd, 1, sqrt=False)
