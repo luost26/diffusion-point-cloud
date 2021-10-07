@@ -42,7 +42,6 @@ parser.add_argument('--categories', type=str_list, default=['airplane'])
 parser.add_argument('--scale_mode', type=str, default='shape_unit')
 parser.add_argument('--train_batch_size', type=int, default=128)
 parser.add_argument('--val_batch_size', type=int, default=64)
-parser.add_argument('--num_workers', type=int, default=4)
 
 # Optimizer and scheduler
 parser.add_argument('--lr', type=float, default=2e-3)
@@ -96,7 +95,7 @@ val_dset = ShapeNetCore(
 train_iter = get_data_iterator(DataLoader(
     train_dset,
     batch_size=args.train_batch_size,
-    num_workers=args.num_workers
+    num_workers=0,
 ))
 
 # Model
@@ -182,24 +181,29 @@ def test(it):
     # gen_pcs *= val_dset.stats['std']
 
     with torch.no_grad():
-        results = compute_all_metrics(gen_pcs.to(args.device), ref_pcs.to(args.device), args.val_batch_size, accelerated_cd=True)
+        results = compute_all_metrics(gen_pcs.to(args.device), ref_pcs.to(args.device), args.val_batch_size)
         results = {k:v.item() for k, v in results.items()}
         jsd = jsd_between_point_cloud_sets(gen_pcs.cpu().numpy(), ref_pcs.cpu().numpy())
         results['jsd'] = jsd
 
+    # CD related metrics
     writer.add_scalar('test/Coverage_CD', results['lgan_cov-CD'], global_step=it)
-    writer.add_scalar('test/Coverage_EMD', results['lgan_cov-EMD'], global_step=it)
     writer.add_scalar('test/MMD_CD', results['lgan_mmd-CD'], global_step=it)
-    writer.add_scalar('test/MMD_EMD', results['lgan_mmd-EMD'], global_step=it)
     writer.add_scalar('test/1NN_CD', results['1-NN-CD-acc'], global_step=it)
-    writer.add_scalar('test/1NN_EMD', results['1-NN-EMD-acc'], global_step=it)
+    # EMD related metrics
+    # writer.add_scalar('test/Coverage_EMD', results['lgan_cov-EMD'], global_step=it)
+    # writer.add_scalar('test/MMD_EMD', results['lgan_mmd-EMD'], global_step=it)
+    # writer.add_scalar('test/1NN_EMD', results['1-NN-EMD-acc'], global_step=it)
+    # JSD
     writer.add_scalar('test/JSD', results['jsd'], global_step=it)
 
-    logger.info('[Test] Coverage  | CD %.6f | EMD %.6f' % (results['lgan_cov-CD'], results['lgan_cov-EMD']))
-    logger.info('[Test] MinMatDis | CD %.6f | EMD %.6f' % (results['lgan_mmd-CD'], results['lgan_mmd-EMD']))
-    logger.info('[Test] 1NN-Accur | CD %.6f | EMD %.6f' % (results['1-NN-CD-acc'], results['1-NN-EMD-acc']))
+    # logger.info('[Test] Coverage  | CD %.6f | EMD %.6f' % (results['lgan_cov-CD'], results['lgan_cov-EMD']))
+    # logger.info('[Test] MinMatDis | CD %.6f | EMD %.6f' % (results['lgan_mmd-CD'], results['lgan_mmd-EMD']))
+    # logger.info('[Test] 1NN-Accur | CD %.6f | EMD %.6f' % (results['1-NN-CD-acc'], results['1-NN-EMD-acc']))
+    logger.info('[Test] Coverage  | CD %.6f | EMD n/a' % (results['lgan_cov-CD'], ))
+    logger.info('[Test] MinMatDis | CD %.6f | EMD n/a' % (results['lgan_mmd-CD'], ))
+    logger.info('[Test] 1NN-Accur | CD %.6f | EMD n/a' % (results['1-NN-CD-acc'], ))
     logger.info('[Test] JsnShnDis | %.6f ' % (results['jsd']))
-
 
 # Main loop
 logger.info('Start training...')

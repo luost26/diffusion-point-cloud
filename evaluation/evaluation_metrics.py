@@ -9,10 +9,11 @@ from tqdm.auto import tqdm
 
 _EMD_NOT_IMPL_WARNED = False
 def emd_approx(sample, ref):
+    global _EMD_NOT_IMPL_WARNED
     emd = torch.zeros([sample.size(0)]).to(sample)
     if not _EMD_NOT_IMPL_WARNED:
         _EMD_NOT_IMPL_WARNED = True
-        print('\n[WARNING]')
+        print('\n\n[WARNING]')
         print('  * EMD is not implemented due to GPU compatability issue.')
         print('  * We will set all EMD to zero by default.')
         print('  * You may implement your own EMD in the function `emd_approx` in ./evaluation/evaluation_metrics.py')
@@ -82,8 +83,8 @@ def _pairwise_EMD_CD_(sample_pcs, ref_pcs, batch_size, verbose=True):
         cd_lst = []
         emd_lst = []
         sub_iterator = range(0, N_ref, batch_size)
-        if verbose:
-            sub_iterator = tqdm(sub_iterator, leave=False)
+        # if verbose:
+        #     sub_iterator = tqdm(sub_iterator, leave=False)
         for ref_b_start in sub_iterator:
             ref_b_end = min(N_ref, ref_b_start + batch_size)
             ref_batch = ref_pcs[ref_b_start:ref_b_end]
@@ -184,15 +185,17 @@ def compute_all_metrics(sample_pcs, ref_pcs, batch_size):
     print("Pairwise EMD CD")
     M_rs_cd, M_rs_emd = _pairwise_EMD_CD_(ref_pcs, sample_pcs, batch_size)
 
+    ## CD
     res_cd = lgan_mmd_cov(M_rs_cd.t())
     results.update({
         "%s-CD" % k: v for k, v in res_cd.items()
     })
-
-    res_emd = lgan_mmd_cov(M_rs_emd.t())
-    results.update({
-        "%s-EMD" % k: v for k, v in res_emd.items()
-    })
+    
+    ## EMD
+    # res_emd = lgan_mmd_cov(M_rs_emd.t())
+    # results.update({
+    #     "%s-EMD" % k: v for k, v in res_emd.items()
+    # })
 
     for k, v in results.items():
         print('[%s] %.8f' % (k, v.item()))
@@ -201,14 +204,16 @@ def compute_all_metrics(sample_pcs, ref_pcs, batch_size):
     M_ss_cd, M_ss_emd = _pairwise_EMD_CD_(sample_pcs, sample_pcs, batch_size)
 
     # 1-NN results
+    ## CD
     one_nn_cd_res = knn(M_rr_cd, M_rs_cd, M_ss_cd, 1, sqrt=False)
     results.update({
         "1-NN-CD-%s" % k: v for k, v in one_nn_cd_res.items() if 'acc' in k
     })
-    one_nn_emd_res = knn(M_rr_emd, M_rs_emd, M_ss_emd, 1, sqrt=False)
-    results.update({
-        "1-NN-EMD-%s" % k: v for k, v in one_nn_emd_res.items() if 'acc' in k
-    })
+    ## EMD
+    # one_nn_emd_res = knn(M_rr_emd, M_rs_emd, M_ss_emd, 1, sqrt=False)
+    # results.update({
+    #     "1-NN-EMD-%s" % k: v for k, v in one_nn_emd_res.items() if 'acc' in k
+    # })
 
     return results
 

@@ -42,7 +42,6 @@ parser.add_argument('--device', type=str, default='cuda')
 # Datasets and loaders
 parser.add_argument('--dataset_path', type=str, default='./data/shapenet.hdf5')
 parser.add_argument('--batch_size', type=int, default=128)
-parser.add_argument('--num_workers', type=int, default=4)
 # Sampling
 parser.add_argument('--sample_num_points', type=int, default=2048)
 parser.add_argument('--normalize', type=str, default='shape_bbox', choices=[None, 'shape_unit', 'shape_bbox'])
@@ -70,7 +69,7 @@ test_dset = ShapeNetCore(
     split='test',
     scale_mode=args.normalize,
 )
-test_loader = DataLoader(test_dset, batch_size=args.batch_size, num_workers=args.num_workers)
+test_loader = DataLoader(test_dset, batch_size=args.batch_size, num_workers=0)
 
 # Model
 logger.info('Loading model...')
@@ -106,7 +105,7 @@ np.save(os.path.join(save_dir, 'out.npy'), gen_pcs.numpy())
 
 # Compute metrics
 with torch.no_grad():
-    results = compute_all_metrics(gen_pcs.to(args.device), ref_pcs.to(args.device), args.batch_size, accelerated_cd=True)
+    results = compute_all_metrics(gen_pcs.to(args.device), ref_pcs.to(args.device), args.batch_size)
     results = {k:v.item() for k, v in results.items()}
     jsd = jsd_between_point_cloud_sets(gen_pcs.cpu().numpy(), ref_pcs.cpu().numpy())
     results['jsd'] = jsd
